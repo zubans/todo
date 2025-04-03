@@ -8,12 +8,12 @@ RUN go mod download
 COPY . .
 
 # Собираем приложение
-RUN CGO_ENABLED=0 GOOS=linux go build -o todo-backend .
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
 FROM alpine:latest
 
 WORKDIR /root/
 
-COPY --from=builder /app/todo-backend .
+COPY --from=builder /app/main .
 
-CMD ["./todo-backend"]
+CMD ["./main"]

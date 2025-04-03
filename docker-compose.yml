@@ -4,11 +4,11 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: todo_db
-      POSTGRES_USER: todo_user
-      POSTGRES_PASSWORD: todo_password
+      POSTGRES_DB: todo
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_pass
     ports:
-      - "5432:5432"
+      - "54321:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -19,9 +19,9 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: "5432"
-      DB_USER: todo_user
-      DB_PASSWORD: todo_password
-      DB_NAME: todo_db
+      DB_USER: db_user
+      DB_PASSWORD: db_pass
+      DB_NAME: todo
     depends_on:
       - db
     labels:
@@ -30,7 +30,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
       - backend
 

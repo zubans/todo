@@ -1,12 +1,15 @@
+const API_BASE_URL = 'http://localhost:8080';
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('todo-form');
   const input = document.getElementById('todo-input');
   const list = document.getElementById('todo-list');
 
-  // Функция для создания новой задачи
-  function createTodoItem(text) {
+  // Функция для создания элемента задачи
+  function createTodoItem(task) {
     const li = document.createElement('li');
     li.setAttribute('draggable', 'true'); // Делаем элемент перетаскиваемым
+    li.dataset.id = task.id; // Сохраняем ID задачи
 
     // Контейнер для текста и приоритета
     const taskContent = document.createElement('div');
@@ -15,11 +18,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Создаем индикатор приоритета
     const priorityIndicator = document.createElement('span');
-    priorityIndicator.classList.add('priority-indicator', 'priority-low');
-    priorityIndicator.dataset.priority = 'low'; // По умолчанию низкий приоритет
+    priorityIndicator.classList.add('priority-indicator');
+    priorityIndicator.dataset.priority = task.priority;
+
+    // Определяем цвет индикатора
+    if (task.priority === 'green') {
+      priorityIndicator.classList.add('priority-low');
+    } else if (task.priority === 'yellow') {
+      priorityIndicator.classList.add('priority-medium');
+    } else if (task.priority === 'red') {
+      priorityIndicator.classList.add('priority-high');
+    }
 
     // Текст задачи
-    const taskText = document.createTextNode(text);
+    const taskText = document.createTextNode(task.title);
 
     // Добавляем индикатор и текст в контейнер
     taskContent.appendChild(priorityIndicator);
@@ -30,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteButton.textContent = 'Удалить';
     deleteButton.classList.add('delete');
     deleteButton.addEventListener('click', () => {
-      list.removeChild(li);
+      deleteTask(task.id);
     });
 
     // Добавляем контент и кнопку удаления в задачу
@@ -50,21 +62,120 @@ document.addEventListener('DOMContentLoaded', () => {
     priorityIndicator.addEventListener('click', () => {
       const currentPriority = priorityIndicator.dataset.priority;
 
-      if (currentPriority === 'low') {
-        priorityIndicator.className = 'priority-indicator priority-medium';
-        priorityIndicator.dataset.priority = 'medium';
-      } else if (currentPriority === 'medium') {
-        priorityIndicator.className = 'priority-indicator priority-high';
-        priorityIndicator.dataset.priority = 'high';
+      let newPriority;
+      if (currentPriority === 'green') {
+        newPriority = 'yellow';
+      } else if (currentPriority === 'yellow') {
+        newPriority = 'red';
       } else {
-        priorityIndicator.className = 'priority-indicator priority-low';
-        priorityIndicator.dataset.priority = 'low';
+        newPriority = 'green';
       }
 
-      sortTasksByPriority();
+      updateTaskPriority(task.id, newPriority);
     });
 
     return li;
+  }
+
+  // Загрузка задач с сервера
+  async function loadTasks() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
+      const tasks = await response.json();
+      tasks.forEach((task) => {
+        const todoItem = createTodoItem(task);
+        list.appendChild(todoItem);
+      });
+      sortTasksByPriority();
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    }
+  }
+
+  // Добавление новой задачи
+  async function addTask(title) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          description: '',
+          priority: 'green',
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add task');
+      }
+      const newTask = await response.json();
+      const todoItem = createTodoItem(newTask);
+      list.appendChild(todoItem);
+      sortTasksByPriority();
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  }
+
+  // Удаление задачи
+  async function deleteTask(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete task');
+      }
+      const li = document.querySelector(`li[data-id="${id}"]`);
+      if (li) {
+        list.removeChild(li);
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  }
+
+  // Обновление приоритета задачи
+  async function updateTaskPriority(id, priority) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: '',
+          description: '',
+          priority,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update task priority');
+      }
+      const li = document.querySelector(`li[data-id="${id}"]`);
+      if (li) {
+        const priorityIndicator = li.querySelector('.priority-indicator');
+        priorityIndicator.dataset.priority = priority;
+
+        // Обновляем классы для цвета
+        priorityIndicator.className = 'priority-indicator';
+        if (priority === 'green') {
+          priorityIndicator.classList.add('priority-low');
+        } else if (priority === 'yellow') {
+          priorityIndicator.classList.add('priority-medium');
+        } else if (priority === 'red') {
+          priorityIndicator.classList.add('priority-high');
+        }
+
+        sortTasksByPriority();
+      }
+    } catch (error) {
+      console.error('Error updating task priority:', error);
+    }
   }
 
   // Сортировка задач по приоритету
@@ -72,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tasks = Array.from(list.querySelectorAll('li'));
 
     tasks.sort((a, b) => {
-      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      const priorityOrder = { red: 3, yellow: 2, green: 1 };
       const priorityA = a.querySelector('.priority-indicator').dataset.priority;
       const priorityB = b.querySelector('.priority-indicator').dataset.priority;
 
@@ -88,10 +199,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const text = input.value.trim();
     if (text !== '') {
-      const todoItem = createTodoItem(text);
-      list.appendChild(todoItem);
+      addTask(text);
       input.value = ''; // Очищаем поле ввода
-      sortTasksByPriority(); // Сортируем задачи после добавления
     }
   });
 
@@ -115,16 +224,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const draggableElements = [...container.querySelectorAll('li:not(.dragging)')];
 
     return draggableElements.reduce(
-      (closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      },
-      { offset: Number.NEGATIVE_INFINITY }
+        (closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+          } else {
+            return closest;
+          }
+        },
+        { offset: Number.NEGATIVE_INFINITY }
     ).element;
   }
+
+  // Загружаем задачи при запуске
+  loadTasks();
 });
