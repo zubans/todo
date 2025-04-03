@@ -26,7 +26,7 @@ func NewPostgresStorage(connStr string) (*PostgresStorage, error) {
 }
 
 func (s *PostgresStorage) CreateTask(task *models.Task) error {
-	err := s.db.QueryRow("INSERT INTO tasks (title, description, priority) VALUES ($1, $2, $3)", task.Title, task.Desc, task.Priority).Scan(&task.Id)
+	err := s.db.QueryRow("INSERT INTO tasks (title, description, priority ) VALUES ($1, $2, $3) RETURNING id", task.Title, task.Desc, task.Priority).Scan(&task.Id)
 
 	if err != nil {
 		return fmt.Errorf("failed to create task: %w", err)
