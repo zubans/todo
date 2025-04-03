@@ -1,3 +1,4 @@
+/* Общие стили */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
@@ -10,7 +11,7 @@ body {
 }
 
 .container {
-  width: 400px;
+  width: 600px;
   background: white;
   padding: 20px;
   border-radius: 8px;
@@ -22,12 +23,12 @@ h1 {
   color: #333;
 }
 
-#todo-form {
-  display: flex;
+form {
+  /*display: flex;*/
   margin-bottom: 20px;
 }
 
-#todo-input {
+input[type="text"] {
   flex: 1;
   padding: 10px;
   border: 1px solid #ccc;
@@ -62,15 +63,15 @@ li {
   background-color: #f9f9f9;
   border: 1px solid #ddd;
   border-radius: 4px;
+  cursor: pointer;
 }
 
 .priority-indicator {
   display: inline-block;
   width: 10px;
   height: 10px;
-  margin-right: 10px;
   border-radius: 50%;
-  cursor: pointer;
+  margin-right: 10px;
 }
 
 .priority-low {
@@ -96,4 +97,63 @@ li {
 
 .delete:hover {
   background-color: #a71d2a;
+}
+
+.tooltip {
+  visibility: hidden;
+  position: absolute;
+  background-color: #333;
+  color: #fff;
+  padding: 5px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+li:hover .tooltip {
+  visibility: visible;
+}
+
+/* Стили для формы редактирования */
+.edit-form {
+  margin-top: 10px;
+  padding: 20px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.edit-form.hidden {
+  display: none;
+}
+
+.edit-form label {
+  display: block;
+  margin-top: 10px;
+}
+
+.edit-form input,
+.edit-form textarea,
+.edit-form select {
+  width: 100%; /* Занимает всю ширину панели задач */
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.edit-form button {
+  margin-top: 15px;
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%; /* Кнопка также занимает всю ширину */
+}
+
+.edit-form button:hover {
+  background-color: #0056b3;
 }

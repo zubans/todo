@@ -64,16 +64,10 @@ func (s *PostgresStorage) GetTasks() ([]models.Task, error) {
 
 func (s *PostgresStorage) UpdateTask(task *models.Task) error {
 	id := task.Id
-	res, err := s.db.Exec("UPDATE tasks SET title = $1, description = $2, priority = $3 WHERE id = $4", task.Title, task.Desc, task.Priority, id)
+	err := s.db.QueryRow("UPDATE tasks SET title = $1, description = $2, priority = $3 WHERE id = $4 RETURNING id", task.Title, task.Desc, task.Priority, id).Scan(&task.Id)
+
 	if err != nil {
-		return err
-	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return sql.ErrNoRows
+		return fmt.Errorf("failed to create task: %w", err)
 	}
 	return nil
 }

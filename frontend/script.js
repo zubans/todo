@@ -1,9 +1,10 @@
-const API_BASE_URL = 'http://94.103.9.172:8080';
-
 document.addEventListener('DOMContentLoaded', () => {
+  const API_BASE_URL = 'http://94.103.9.172:8080'; // Базовый URL API
   const form = document.getElementById('todo-form');
   const input = document.getElementById('todo-input');
   const list = document.getElementById('todo-list');
+
+  let currentTaskId = null; // ID текущей редактируемой задачи
 
   // Функция для создания элемента задачи
   function createTodoItem(task) {
@@ -33,9 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Текст задачи
     const taskText = document.createTextNode(task.title);
 
-    // Добавляем индикатор и текст в контейнер
+    // Подсказка с описанием
+    const tooltip = document.createElement('div');
+    tooltip.classList.add('tooltip');
+    tooltip.textContent = task.description || 'Нет описания';
+
+    // Добавляем индикатор, текст и подсказку в контейнер
     taskContent.appendChild(priorityIndicator);
     taskContent.appendChild(taskText);
+    taskContent.appendChild(tooltip);
 
     // Кнопка удаления
     const deleteButton = document.createElement('button');
@@ -49,30 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
     li.appendChild(taskContent);
     li.appendChild(deleteButton);
 
-    // Логика перетаскивания
-    li.addEventListener('dragstart', () => {
-      li.classList.add('dragging');
-    });
-
-    li.addEventListener('dragend', () => {
-      li.classList.remove('dragging');
-    });
-
-    // Логика изменения приоритета
-    priorityIndicator.addEventListener('click', () => {
-      const currentPriority = priorityIndicator.dataset.priority;
-
-      let newPriority;
-      if (currentPriority === 'green') {
-        newPriority = 'yellow';
-      } else if (currentPriority === 'yellow') {
-        newPriority = 'red';
-      } else {
-        newPriority = 'green';
-      }
-
-      updateTaskPriority(task.id, newPriority);
-    });
+    // Открытие формы редактирования при клике на задачу
+    li.addEventListener('click', () => openEditForm(li, task));
 
     return li;
   }
@@ -100,9 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
           description: '',
@@ -139,61 +122,137 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Обновление приоритета задачи
-  async function updateTaskPriority(id, priority) {
+  // Обновление задачи
+  async function updateTask(id, updatedData) {
     try {
       const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: '',
-          description: '',
-          priority,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData),
       });
       if (!response.ok) {
-        throw new Error('Failed to update task priority');
+        throw new Error('Failed to update task');
       }
-      const li = document.querySelector(`li[data-id="${id}"]`);
-      if (li) {
-        const priorityIndicator = li.querySelector('.priority-indicator');
-        priorityIndicator.dataset.priority = priority;
-
-        // Обновляем классы для цвета
-        priorityIndicator.className = 'priority-indicator';
-        if (priority === 'green') {
-          priorityIndicator.classList.add('priority-low');
-        } else if (priority === 'yellow') {
-          priorityIndicator.classList.add('priority-medium');
-        } else if (priority === 'red') {
-          priorityIndicator.classList.add('priority-high');
-        }
-
-        sortTasksByPriority();
-      }
+      return await response.json();
     } catch (error) {
-      console.error('Error updating task priority:', error);
+      console.error('Error updating task:', error);
     }
   }
 
-  // Сортировка задач по приоритету
-  function sortTasksByPriority() {
-    const tasks = Array.from(list.querySelectorAll('li'));
+  // Открытие формы редактирования
+  function openEditForm(li, task) {
+    // Если уже есть открытая форма, закрываем её
+    const existingForm = list.querySelector('.edit-form');
+    if (existingForm) {
+      closeEditForm(existingForm);
+    }
 
-    tasks.sort((a, b) => {
-      const priorityOrder = { red: 3, yellow: 2, green: 1 };
-      const priorityA = a.querySelector('.priority-indicator').dataset.priority;
-      const priorityB = b.querySelector('.priority-indicator').dataset.priority;
+    // Создаем форму редактирования
+    const editForm = document.createElement('form');
+    editForm.classList.add('edit-form');
 
-      return priorityOrder[priorityB] - priorityOrder[priorityA];
+    // Поле заголовка
+    const titleLabel = document.createElement('label');
+    titleLabel.textContent = 'Заголовок:';
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.value = task.title;
+    titleInput.required = true;
+
+    // Поле описания
+    const descriptionLabel = document.createElement('label');
+    descriptionLabel.textContent = 'Описание:';
+    const descriptionTextarea = document.createElement('textarea');
+    descriptionTextarea.rows = 4;
+    descriptionTextarea.value = task.description || '';
+
+    // Выбор приоритета
+    const priorityLabel = document.createElement('label');
+    priorityLabel.textContent = 'Приоритет:';
+    const prioritySelect = document.createElement('select');
+    const priorities = ['green', 'yellow', 'red'];
+    priorities.forEach((priority) => {
+      const option = document.createElement('option');
+      option.value = priority;
+      option.textContent = getPriorityName(priority);
+      if (priority === task.priority) {
+        option.selected = true;
+      }
+      prioritySelect.appendChild(option);
     });
 
-    tasks.forEach((task) => list.appendChild(task));
+    // Кнопка сохранения
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Сохранить';
+
+    // Добавляем элементы в форму
+    editForm.appendChild(titleLabel);
+    editForm.appendChild(titleInput);
+    editForm.appendChild(descriptionLabel);
+    editForm.appendChild(descriptionTextarea);
+    editForm.appendChild(priorityLabel);
+    editForm.appendChild(prioritySelect);
+    editForm.appendChild(saveButton);
+
+    // Добавляем форму под задачей
+    list.insertBefore(editForm, li.nextSibling);
+
+    // Обработка отправки формы
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const updatedTask = {
+        title: titleInput.value.trim(),
+        description: descriptionTextarea.value.trim(),
+        priority: prioritySelect.value,
+      };
+
+      if (!updatedTask.title) {
+        alert('Заголовок не может быть пустым');
+        return;
+      }
+
+      try {
+        const updatedTaskData = await updateTask(task.id, updatedTask);
+        li.querySelector('.priority-indicator').dataset.priority = updatedTaskData.priority;
+        li.querySelector('.priority-indicator').className = 'priority-indicator';
+        if (updatedTaskData.priority === 'green') {
+          li.querySelector('.priority-indicator').classList.add('priority-low');
+        } else if (updatedTaskData.priority === 'yellow') {
+          li.querySelector('.priority-indicator').classList.add('priority-medium');
+        } else if (updatedTaskData.priority === 'red') {
+          li.querySelector('.priority-indicator').classList.add('priority-high');
+        }
+        li.querySelector('.tooltip').textContent = updatedTaskData.description || 'Нет описания';
+        li.querySelector('div').childNodes[1].textContent = updatedTaskData.title;
+
+        closeEditForm(editForm); // Скрываем форму после сохранения
+      } catch (error) {
+        console.error('Error updating task:', error);
+      }
+    });
   }
 
-  // Обработка отправки формы
+  // Закрытие формы редактирования
+  function closeEditForm(form) {
+    form.remove(); // Удаляем форму из DOM
+  }
+
+  // Получение имени приоритета
+  function getPriorityName(priority) {
+    switch (priority) {
+      case 'green':
+        return 'Низкий';
+      case 'yellow':
+        return 'Средний';
+      case 'red':
+        return 'Высокий';
+      default:
+        return '';
+    }
+  }
+
+  // Обработка отправки формы добавления задачи
   form.addEventListener('submit', (e) => {
     e.preventDefault(); // Предотвращаем перезагрузку страницы
 
@@ -235,6 +294,21 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         { offset: Number.NEGATIVE_INFINITY }
     ).element;
+  }
+
+  // Сортировка задач по приоритету
+  function sortTasksByPriority() {
+    const tasks = Array.from(list.querySelectorAll('li'));
+
+    tasks.sort((a, b) => {
+      const priorityOrder = { red: 3, yellow: 2, green: 1 };
+      const priorityA = a.querySelector('.priority-indicator').dataset.priority;
+      const priorityB = b.querySelector('.priority-indicator').dataset.priority;
+
+      return priorityOrder[priorityB] - priorityOrder[priorityA];
+    });
+
+    tasks.forEach((task) => list.appendChild(task));
   }
 
   // Загружаем задачи при запуске

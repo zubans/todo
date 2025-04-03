@@ -82,9 +82,9 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		currentTask.Priority = updatedTask.Priority
 	}
 
-	if err := h.service.UpdteTask(currentTask); err != nil {
+	if err := h.service.UpdateTask(currentTask); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	json.NewEncoder(w).Encode(currentTask)
 }

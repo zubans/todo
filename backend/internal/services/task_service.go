@@ -29,7 +29,7 @@ func (service *TaskService) GetTaskById(id int) (*models.Task, error) {
 	return service.repo.GetTaskById(id)
 }
 
-func (service *TaskService) UpdteTask(task *models.Task) error {
+func (service *TaskService) UpdateTask(task *models.Task) error {
 	err := service.repo.UpdateTask(task)
 	if err != nil {
 		return err
