@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 	"log"
+	"net/http"
 	"os"
 	"todo/internal/app"
 )
@@ -28,7 +30,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	newApp.Serve(":8080")
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://94.103.9.172:3000"},
+		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+		AllowedHeaders: []string{"Content-Type"},
+	})
+
+	newApp.Serve(":8080", c)
 }
 
 func getEnv(s string, s2 string) string {

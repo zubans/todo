@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'http://94.103.9.172:8080';
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('todo-form');

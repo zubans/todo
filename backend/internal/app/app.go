@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"todo/internal/handlers"
@@ -44,7 +45,9 @@ func (app *App) routes() {
 	app.router.Put("/tasks/{id}", handler.UpdateTask)
 }
 
-func (app *App) Serve(addr string) {
+func (app *App) Serve(addr string, c *cors.Cors) {
 	log.Printf("starting server on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, app.router))
+	handler := c.Handler(app.router)
+
+	log.Fatal(http.ListenAndServe(addr, handler))
 }
