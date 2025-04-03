@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/lib/pq"
 	"time"
 	"todo/internal/models"
@@ -60,7 +61,7 @@ func (s *PostgresStorage) GetTasks() ([]models.Task, error) {
 	return tasks, nil
 }
 
-func (s *PostgresStorage) UpdateTask(task models.Task) error {
+func (s *PostgresStorage) UpdateTask(task *models.Task) error {
 	id := task.Id
 	res, err := s.db.Exec("UPDATE tasks SET title = $1, description = $2, priority = $3 WHERE id = $4", task.Title, task.Desc, task.Priority, id)
 	if err != nil {
@@ -82,6 +83,20 @@ func (s *PostgresStorage) DeleteTask(id int) error {
 		return err
 	}
 	return nil
+}
+
+func (s *PostgresStorage) GetTaskById(id int) (*models.Task, error) {
+	row := s.db.QueryRow("SELECT id, title, description, priority FROM tasks WHERE id = $1", id)
+
+	var task models.Task
+	err := row.Scan(&task.Id, &task.Title, &task.Desc, &task.Priority)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("task with id %d not found", id)
+	} else if err != nil {
+		return nil, fmt.Errorf("failed to get task: %w", err)
+	}
+
+	return &task, nil
 }
 
 func (s *PostgresStorage) Close() error {

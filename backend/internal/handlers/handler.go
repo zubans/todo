@@ -42,7 +42,7 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -60,17 +60,31 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var task models.Task
-	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
+	var updatedTask models.Task
+	if err := json.NewDecoder(r.Body).Decode(&updatedTask); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	task.Id = id
-	if err := h.service.UpdteTask(task); err != nil {
+	currentTask, err := h.service.GetTaskById(id)
+	if err != nil {
+		http.Error(w, "Task not found", http.StatusNotFound)
+		return
+	}
+
+	if updatedTask.Title != "" {
+		currentTask.Title = updatedTask.Title
+	}
+	if updatedTask.Desc != "" {
+		currentTask.Desc = updatedTask.Desc
+	}
+	if updatedTask.Priority != "" {
+		currentTask.Priority = updatedTask.Priority
+	}
+
+	if err := h.service.UpdteTask(currentTask); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-
 }

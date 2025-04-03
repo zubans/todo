@@ -21,10 +21,14 @@ func (repo *TaskRepository) GetTasks() ([]models.Task, error) {
 	return repo.storage.GetTasks()
 }
 
-func (repo *TaskRepository) UpdateTask(task models.Task) error {
+func (repo *TaskRepository) UpdateTask(task *models.Task) error {
 	return repo.storage.UpdateTask(task)
 }
 
 func (repo *TaskRepository) DeleteTask(id int) error {
 	return repo.storage.DeleteTask(id)
+}
+
+func (repo *TaskRepository) GetTaskById(id int) (*models.Task, error) {
+	return repo.storage.GetTaskById(id)
 }
