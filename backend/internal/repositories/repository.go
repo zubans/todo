@@ -13,7 +13,7 @@ func NewTaskRepository(storage storage.Storage) *TaskRepository {
 	return &TaskRepository{storage: storage}
 }
 
-func (repo *TaskRepository) CreateTask(task models.Task) error {
+func (repo *TaskRepository) CreateTask(task *models.Task) error {
 	return repo.storage.CreateTask(task)
 }
 

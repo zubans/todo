@@ -13,7 +13,7 @@ func NewTaskService(repo *repositories.TaskRepository) *TaskService {
 	return &TaskService{repo}
 }
 
-func (service *TaskService) CreateTask(task models.Task) error {
+func (service *TaskService) CreateTask(task *models.Task) error {
 	return service.repo.CreateTask(task)
 }
 

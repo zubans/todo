@@ -24,7 +24,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.service.CreateTask(task); err != nil {
+	if err := h.service.CreateTask(&task); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
