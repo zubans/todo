@@ -1,8 +1,10 @@
 package app
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/cors"
+	"io"
 	"log"
 	"net/http"
 	"todo/internal/handlers"
@@ -18,6 +20,17 @@ type App struct {
 
 func Test(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Привет!"))
+}
+
+func apiHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("Получен запрос: method=%s, path=%s, headers=%v\n, body=%s", r.Method, r.URL.Path, r.Header, string(body))
+	defer r.Body.Close()
+	fmt.Fprintln(w, "OK")
 }
 
 func NewApp(connStr string) (*App, error) {
@@ -43,6 +56,8 @@ func (app *App) routes() {
 	app.router.Post("/tasks", handler.CreateTask)
 	app.router.Delete("/tasks/{id}", handler.DeleteTask)
 	app.router.Put("/tasks/{id}", handler.UpdateTask)
+	app.router.Get("/api", apiHandler)
+
 }
 
 func (app *App) Serve(addr string, c *cors.Cors) {
