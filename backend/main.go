@@ -31,7 +31,7 @@ func main() {
 	}
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://94.103.9.172:3000"},
+		AllowedOrigins: []string{"http://192.168.1.118:3000"},
 		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 		AllowedHeaders: []string{"Content-Type"},
 	})
