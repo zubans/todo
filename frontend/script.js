@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const API_BASE_URL = 'http://94.103.9.172:8080'; // Базовый URL API
+  const API_BASE_URL = 'http://localhost:8080'; // Базовый URL API
   const form = document.getElementById('todo-form');
   const input = document.getElementById('todo-input');
   const list = document.getElementById('todo-list');
